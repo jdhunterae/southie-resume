@@ -1,0 +1,45 @@
+name: Build Resume
+
+permissions:
+  contents: write    # This is required for creating releases
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**/*.tex'
+      - '.github/workflows/build.yml'
+      - 'Makefile'
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install TeX Live
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y texlive-full fonts-roboto
+    
+    - name: Build documents
+      run: make all
+    
+    - name: Upload PDF artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: documents
+        path: out/*.pdf
+        
+    - name: Create Release
+      if: github.ref == 'refs/heads/main'  # Only on main branch
+      uses: softprops/action-gh-release@v1
+      with:
+        files: out/*.pdf
+        name: Latest Resume Documents
+        tag_name: latest
+        body: Automatically generated resume documents
+        draft: false
+        prerelease: false
